@@ -95,6 +95,8 @@ def Translate(sourceFile:str):
     with open(sourceFile, encoding="utf8") as f:
         data = f.read().split("\n")
     data = [i[::-1] for i in data]
+    
+    # data = "".join(data)
     data = list("".join(data))
     
     newlist = []
@@ -113,18 +115,16 @@ def Translate(sourceFile:str):
     
     lowestIndex = 0 ### save lowest index and add special char at that index
     for i, val in enumerate(data):
-        if val not in {"b", "+", "-"}: #val.isnumeric() or val == " ":
+        if val not in "+-": #val.isnumeric() or val == " ":
             newlist.append(translation[val]) 
             lowestIndex += 1
         else:
-            # newlist.append("")
-            # newlist[i-1] += translation[val]
             newlist[lowestIndex-1] += translation[val]
-    # finalList = []
-    # for i in newlist:
-    #     if i:
-    #         finalList.append(i)
-            
+
+    # translation = str.maketrans("0123456-+ ", "ABCDEFGb#P")
+    # translated = data.translate(translation)
+    # print(translated)
+
     count = 1
     length = 0
     out = ""
@@ -146,16 +146,7 @@ def Title(source_root):
     with open(indexFile, encoding="utf8") as f:
         data = f.read().split('"')
         # data = [[x for x in line.split()] for line in f.read().split("\n")]
-    print(data)
-    titleFileDict = {}
-    title = True
-    for i in range(1, len(data), 2):
-        if title:
-            titleFileDict[data[i]] = ""
-            title = False
-        else:
-            titleFileDict[data[i-2]] = data[i]
-            title = True
+    titleFileDict = {data[i]: data[i+2] for i in range(1, len(data), 4)}
     
     return titleFileDict
 
@@ -165,12 +156,12 @@ def Umkansanize(source_root:str, target_root:str) -> dict[str,int]:
     outDict = []
     for i in index:
         translated, length = Translate(source_root + "/" + index[i])
-        if len(index[i]) > 5:
-            pathPart, fileName = os.path.split(index[i])
-            os.makedirs(target_root + "/" + pathPart, exist_ok=True)
-            file = target_root + "/" + pathPart + "/" + i + ".txt"
-        else:
-            file = target_root + "/" + i + ".txt"
+        # if len(index[i]) > 5:
+        pathPart, fileName = os.path.split(index[i])
+        os.makedirs(target_root + "/" + pathPart, exist_ok=True)
+        file = target_root + "/" + pathPart + "/" + i + ".txt"
+        # else:
+        #     file = target_root + "/" + i + ".txt"
         
         with open(file, "w", encoding="utf8") as f:
             f.write(translated)
@@ -184,6 +175,5 @@ def Umkansanize(source_root:str, target_root:str) -> dict[str,int]:
     return outDict
     pass
 
-if __name__ == "__main__":
-    Umkansanize("Tarahumara", "Umkansanian")
-
+# if __name__ == "__main__":
+    # Umkansanize("Tarahumara", "Umkansanian")
