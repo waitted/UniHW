@@ -93,51 +93,84 @@ import os
 
 def Translate(sourceFile:str):
     with open(sourceFile, encoding="utf8") as f:
-        data = f.read().split("\n")
-    data = [i[::-1] for i in data]
+        translated = f.read().split("\n")
+    translated = [i[::-1] for i in translated]
     
-    # data = "".join(data)
-    data = list("".join(data))
+    translated = "".join(translated)
+    # data = list("".join(data))
     
-    newlist = []
+    # newlist = []
     translation = {
-        "0": "A",
-        "1": "B",
-        "2": "C",
-        "3": "D",
-        "4": "E",
-        "5": "F",
-        "6": "G",
-        "-": "b",
-        "+": "#",
-        " ": "P"
-        }
-    
-    lowestIndex = 0 ### save lowest index and add special char at that index
-    for i, val in enumerate(data):
-        if val not in "+-": #val.isnumeric() or val == " ":
-            newlist.append(translation[val]) 
-            lowestIndex += 1
-        else:
-            newlist[lowestIndex-1] += translation[val]
-
+        '0': 'A', '1': 'B', '2': 'C', '3': 'D', '4': 'E', '5': 'F', '6': 'G', ' ': 'P',
+        '0-': 'Ab', '1-': 'Bb', '2-': 'Cb', '3-': 'Db', '4-': 'Eb', '5-': 'Fb', '6-': 'Gb',
+        '0+': 'A#', '1+': 'B#', '2+': 'C#', '3+': 'D#', '4+': 'E#', '5+': 'F#', '6+': 'G#'
+    }
+    # {
+    #     "0": "A",
+    #     "1": "B",
+    #     "2": "C",
+    #     "3": "D",
+    #     "4": "E",
+    #     "5": "F",
+    #     "6": "G",
+    #     "-": "b",
+    #     "+": "#",
+    #     " ": "P"
+        
+    #     }
     # translation = str.maketrans("0123456-+ ", "ABCDEFGb#P")
     # translated = data.translate(translation)
-    # print(translated)
-
+    # lowestIndex = 0 ### save lowest index and add special char at that index
+    size = len(translated)
+    temp = translated[0]
     count = 1
     length = 0
+    check = 1 if translated[-1] in "+-" else 0
+    i = 0
     out = ""
-    for i in range(1, len(newlist)):
-        if newlist[i] == newlist[i-1]:
-            count += 1
-        else:
-            out += newlist[i-1] + str(count)
+    
+    while i + check < size:
+        try:
+            if translated[i+1] in "+-":
+                temp = translated[i:i+2]
+                while translated[i+2:i+4] == temp:
+                    count += 1
+                    i += 2
+                i += 2
+            else:
+                temp = translated[i]
+                while translated[i+1] == temp and translated[i+2] not in "+-":
+                    count += 1
+                    i += 1
+                i += 1
+            out += translation[temp] + str(count)
             length += count
             count = 1
-    out += newlist[-1] + str(count)
-    length += count
-    
+        except IndexError:
+            if translated[i] == temp:
+                count += 1
+            length += count
+            out += translation[translated[i]] + str(count)
+            break
+    # for i, val in enumerate(data):
+    #     if val not in "+-": #val.isnumeric() or val == " ":
+    #         newlist.append(translation[val]) 
+    #         lowestIndex += 1
+    #     else:
+    #         newlist[lowestIndex-1] += translation[val]
+
+    # count = 1
+    # length = 0
+    # out = ""
+    # for i in range(1, len(newlist)):
+    #     if newlist[i] == newlist[i-1]:
+    #         count += 1
+    #     else:
+    #         out += newlist[i-1] + str(count)
+    #         length += count
+    #         count = 1
+    # out += newlist[-1] + str(count)
+    # length += count
     return (out, length)
     pass
 
@@ -171,9 +204,10 @@ def Umkansanize(source_root:str, target_root:str) -> dict[str,int]:
     indexFile = ['"' + str(i) + '"' + " " + str(outDict[i]) + "\n" for i in outDict]
     with open(target_root + "/index.txt", "w", encoding="utf8") as f:
         f.writelines(indexFile)
-    
+    print(outDict)
     return outDict
     pass
 
 # if __name__ == "__main__":
     # Umkansanize("Tarahumara", "Umkansanian")
+    Umkansanize("test10", "test01010101010")
