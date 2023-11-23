@@ -1,213 +1,183 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+'''It is a quiet December evening, and while it's pouring rain outside
+you get a call from your friend Bart, who is not very computer
+savvy. After calming him down, he tells you that he went to his PC to
+look for the perfect gift, surfing on exotic and alternative
+e-commerce sites, doing searches on disparate sites using an automatic
+translator. He tells you he ended up on a site with the .atp domain,
+thinking it had something to do with tennis, his great passion. After
+following a couple of products on the strange site, he noticed that
+his browser was responding more slowly and the mouse pointer was
+starting to flicker. After a few seconds, a warning message appeared
+informing him that he had been infected with the latest generation of
+ransomware, which targets sensitive files. Panicked, he remembered
+your venture with the Tarahumara sheet music and called you to help
+him recover his files. The next day, you go to Bart's house and
+analyze the situation: as you thought, the ransomware is the infamous
+Burl1(ONE), which encrypts PC files by storing the encryption key
+inside images with the .png extension, turning them into intricate
+puzzles. Because Bart stores his images on an on cloud service, you
+manage to retrieve the original images so you can reconstruct the
+ransomware's encryption key and decrypt all his precious files. Will
+you be able to find all the keys and recover all the files?
+Bart is counting on you!
+
+The Burl1 ransomware stores the encryption key by dividing images with
+the .png extension into square tiles and performing or not performing
+rotations of the individual tiles of 90, 180 or 270°, that is,
+performing one, two or three rotations to the right. The key will
+respectively have an 'R' (right) an 'F' (flip) or an 'L' (left),
+depending on the rotation made. The absence of rotation reports the
+character 'N'.
+
+For each image, it is necessary to reconstruct the encryption key in
+the form of a list of strings: each string corresponds to the sequence
+of rotations of each tile in a row. So a 100x60 image in which the
+tiles are size 20 will hide an encryption key of 15 characters,
+organized into three strings of five characters each. In fact, there
+will be 5 tiles per row (100//20 = 5) and 3 rows (60//20 = 3). To find
+out the rotations performed you have to use the image you retrieved
+from the cloud to compare with the encrypted image.
+
+You need to write the function
+jigsaw(puzzle_image:str, plain_image:str, tile_size:int, encrypted_file:str, plain_file:str) -> list[str]
+that takes as input:
+ - the name of the file containing the image with the rotated tiles,
+ - the name of the file containing the image with the unrotated tiles,
+ - an integer indicating the size of the side of the square tiles, 
+ - the name of a text file to be decrypted with the encryption key, and
+ - the name in which to save the decrypted file.
+
+The function must reconstruct and return the encryption key hidden in
+the image in puzzle_image and use it to decrypt the encrypted file,
+saving the plaintext in a file called plain_file. The key is the
+sequence of rotations to be made to reconstruct the initial image and
+decrypt the input file.
+
+For example, comparing the image in test01_in.png with test01_exp.png
+and considering the 20-pixel square tiles, it can be determined that
+the rotations applied were
+  - 'LFR' for the tiles in the first row,
+  - 'NFF' for the tiles in the second row, and
+  - 'FNR' for the tiles in the third row.
+So the key to be returned will be: ['LFR', 'NFF', 'FNR'].
+
+Decryption of the file is achieved by implementing a transformation
+depending on the character of the key in position i, modulo the length of the
+key.  For example, if the key is ['LFR', 'NFF', 'FNR'], the key is 9
+long, and we need to decrypt the character at position 14 of the input
+file, we need to consider the character at position 14%9 = 5 of the
+key, i.e., 'F'.
+The transformations for decryption are as follows:
+
+  - R = text[i] replaced by the character with following ord
+  - L = text[i] replaced by the character with previous ord
+  - N = remains unchanged
+  - F = swap text[i] with text[i+1]. If i+1 does not exist, we consider
+        the character text[0].
+
+For example, if the key is LFR and the ecrypted text is BNVDCAP, the
+plaintext will be AVOCADO since the decryption will be the following:
+
+step     key      deciphering-buffer
+1        LFR      BNVDCAP -> ANVDCAP
+         ^        ^
+2        LFR      ANVDCAP -> AVNDCAP
+          ^        ^
+3        LFR      AVNDCAP -> AVODCAP
+           ^        ^
+4        LFR      AVODCAP -> AVOCCAP
+         ^           ^
+5        LFR      AVOCCAP -> AVOCACP
+          ^           ^
+6        LFR      AVOCACP -> AVOCADP
+           ^           ^
+7        LFR      AVOCADP -> AVOCADO
+         ^              ^
+
 '''
-Ajeje the librarian, recently found a hidden room
-in the Keras Library (a great place located in
-Umkansa, the largest village in the White Mountains).
-There, she discovered several books, containing
-music scores of ancient Tarahumara songs.
-So, she invited over a musician friend to have a look
-at them, and he informed her that the scores are
-written in Tarahumara notation and need to be translated
-into a notation familiar to Umkansanian musicians,
-so they can play them back.
 
-Tarahumaras used numbers instead of letters for
-writing notes:
-0 in place of A, 1 in place of B, and so on, until
-7 in place of G. Flat (b) and sharp (#) notes
-(see note 3 below, if you do not know what flat
-and sharp notes are)
-were followed by a - and a +, respectively (for example,
-0- meant flat A). Moreover, they just repeated the
-same number multiple times to represent the note's
-duration. For example, 0000 would mean that the
-A note had a length of 4, while 0-0-0-0- would mean
-that the A flat note had a length of 4.
-Pauses were written down
-as spaces; for example, twelve spaces represent
-a pause of 12. Both notes and pauses could span
-different lines of the score (e.g., starting on line
-x and continuing on line x + 1, x + 2, and so on).
-Finally, music scores were written from right
-to left and from top to bottom, and going to a new
-line did not mean anything in terms of the music score.
-Umkansanians, instead, are used to write down notes using letters,
-and each note is followed by its duration (so, the example
-above would be written as A4). Flat and sharp notes are
-followed by a b or a #, respectively (for example, A flat
-is written as Ab, so the example above would be written ad
-Ab4). Pauses are written using the letter P, followed by
-their duration, and no spaces are used at all.
-Finally, they are used to read music from left
-to right on a single row.
+# %%
+import images
+def rotate(tile: list) -> list:
+    nrows = len(tile)
+    ncolumns = len(tile[0])
+    new_tile = []
+    for i in range(ncolumns):
+        row = []
+        for j in range(nrows):
+            row.append(tile[j][i])
+        new_tile.append(row[::-1])
 
-As Ajeje knows that you are a skilled programmer, she
-provides you with a folder containing the transcription
-of all the Tarahumara songs she found, organized in
-multiple subfolders and files (one song per file).
-Also, she prepared an index file in which each row
-contains the title of a Tarahumara song (in quotes),
-followed by a space and the path of the file containing
-that song (in quotes, relative to the root folder).
-She would like to translate all the songs listed in
-the index and store them into new files, each one
-named with the title of the song it contains (.txt),
-in a folder structure matching the original one.
-Also, she would like to store in the root folder of
-the created structure, a file containing on each row
-the title of a song (in quotes) and the corresponding
-song length, separated by a space. Songs in the index
-need to be ordered in descending length and, if the
-length of some songs is the same, in ascending alphabetical
-order. The length of a song is the sum of the durations
-of all notes and pauses it is made of.
+    return new_tile
 
-Would you be able to help Ajeje out in translating
-the Tarahumara songs into Umkansanian ones?
+def make_tile(img: list, i: int, j: int, size: int) -> list:
+    tile = []
+    for row in img[i*size:(i+1)*size]:
+        tile.append(row[j*size:(j+1)*size])
+        
+    return tile
 
-Note 0: below, you are provided with a function to
-Umkansanize the Tarahumara songs; after being executed,
-it must return a dictionary in which each key is a song
-title and the associated value is the song's duration
-
-Note 1: the songs index file index.txt
-is stored in the source_root folder
-
-Note 2: the index of the translated songs
-index.txt is in the target_root folder
-
-Note 3: flat and sharp notes are just "altered" versions
-of regular notes; for example an F# ("F sharp") is the
-altered version of an F, that is, an F note which is a
-half of a tone higher than a regular F; the same holds for
-flat notes, which are a half of a tone lower than regular notes;
-from the point of view of the homework, flat and sharp notes
-must be treated the same as regular notes (except for their notation).
-
-Note 4: to create the directory structure you can use the 'os' library functions
-(e.g. os.makedirs)
-'''
-
-import os
-
-def Translate(sourceFile:str):
-    with open(sourceFile, encoding="utf8") as f:
-        translated = f.read().split("\n")
-    translated = [i[::-1] for i in translated]
+def decryption(encrypted_file: str, encryption_key: str) -> str:
+    with open(encrypted_file, "r", encoding = "utf8") as f:
+        data = list(f.read())
     
-    translated = "".join(translated)
-    # data = list("".join(data))
+    key_length = len(encryption_key)
+    decrypted = ""
+    for i, val in enumerate(data):
+        new_key = encryption_key[i % key_length]
+        if new_key == "N":
+            decrypted += val
+        elif new_key == "R":
+            decrypted += chr(ord(val)+1)
+        elif new_key == "L":
+            decrypted += chr(ord(val)-1)
+        else:
+            try:
+                decrypted += data[i+1]
+                data[i+1] = val
+            except IndexError:
+                decrypted = val + decrypted[1::] + decrypted[0]
     
-    # newlist = []
-    translation = {
-        '0': 'A', '1': 'B', '2': 'C', '3': 'D', '4': 'E', '5': 'F', '6': 'G', ' ': 'P',
-        '0-': 'Ab', '1-': 'Bb', '2-': 'Cb', '3-': 'Db', '4-': 'Eb', '5-': 'Fb', '6-': 'Gb',
-        '0+': 'A#', '1+': 'B#', '2+': 'C#', '3+': 'D#', '4+': 'E#', '5+': 'F#', '6+': 'G#'
+    return decrypted
+    
+    
+def jigsaw(puzzle_image: str, plain_image: str, tile_size:int, encrypted_file: str, plain_file: str) -> list[str]:
+    rotations = {
+        0: "N",
+        1: "R",
+        2: "F",
+        3: "L"
     }
-    # {
-    #     "0": "A",
-    #     "1": "B",
-    #     "2": "C",
-    #     "3": "D",
-    #     "4": "E",
-    #     "5": "F",
-    #     "6": "G",
-    #     "-": "b",
-    #     "+": "#",
-    #     " ": "P"
-        
-    #     }
-    # translation = str.maketrans("0123456-+ ", "ABCDEFGb#P")
-    # translated = data.translate(translation)
-    # lowestIndex = 0 ### save lowest index and add special char at that index
-    size = len(translated)
-    temp = translated[0]
-    count = 1
-    length = 0
-    check = 1 if translated[-1] in "+-" else 0
-    i = 0
-    out = ""
-    
-    while i + check < size:
-        try:
-            if translated[i+1] in "+-":
-                temp = translated[i:i+2]
-                while translated[i+2:i+4] == temp:
-                    count += 1
-                    i += 2
-                i += 2
-            else:
-                temp = translated[i]
-                while translated[i+1] == temp and translated[i+2] not in "+-":
-                    count += 1
-                    i += 1
-                i += 1
-            out += translation[temp] + str(count)
-            length += count
-            count = 1
-        except IndexError:
-            if translated[i] == temp:
+    img = images.load(puzzle_image)
+    img_exp = images.load(plain_image)
+    nrows = len(img)//tile_size
+    ncolumns = len(img[0])//tile_size
+    out = []
+    for i in range(nrows):
+        encryption = ""
+        for j in range(ncolumns):
+            count = 0
+            tile = make_tile(img, i, j, tile_size)
+            tile_exp = make_tile(img_exp, i, j, tile_size)
+            while tile != tile_exp:
+                tile = rotate(tile)
                 count += 1
-            length += count
-            out += translation[translated[i]] + str(count)
-            break
-    # for i, val in enumerate(data):
-    #     if val not in "+-": #val.isnumeric() or val == " ":
-    #         newlist.append(translation[val]) 
-    #         lowestIndex += 1
-    #     else:
-    #         newlist[lowestIndex-1] += translation[val]
-
-    # count = 1
-    # length = 0
-    # out = ""
-    # for i in range(1, len(newlist)):
-    #     if newlist[i] == newlist[i-1]:
-    #         count += 1
-    #     else:
-    #         out += newlist[i-1] + str(count)
-    #         length += count
-    #         count = 1
-    # out += newlist[-1] + str(count)
-    # length += count
-    return (out, length)
-    pass
-
-def Title(source_root):
-    indexFile = source_root + "/index.txt"
-    with open(indexFile, encoding="utf8") as f:
-        data = f.read().split('"')
-        # data = [[x for x in line.split()] for line in f.read().split("\n")]
-    titleFileDict = {data[i]: data[i+2] for i in range(1, len(data), 4)}
+            encryption += rotations[count]
+        out.append(encryption)
     
-    return titleFileDict
-
-def Umkansanize(source_root:str, target_root:str) -> dict[str,int]:
-    os.makedirs(target_root, exist_ok=True)
-    index = Title(source_root)
-    outDict = []
-    for i in index:
-        translated, length = Translate(source_root + "/" + index[i])
-        # if len(index[i]) > 5:
-        pathPart, fileName = os.path.split(index[i])
-        os.makedirs(target_root + "/" + pathPart, exist_ok=True)
-        file = target_root + "/" + pathPart + "/" + i + ".txt"
-        # else:
-        #     file = target_root + "/" + i + ".txt"
+    encryption_key = "".join("".join(element) for element in out)
+    decrypted = decryption(encrypted_file, encryption_key)
+    
+    with open(plain_file, "w", encoding = "utf8") as f:
+        f.write(decrypted)
         
-        with open(file, "w", encoding="utf8") as f:
-            f.write(translated)
-        outDict.append([i, length])
-    outDict = dict(sorted(outDict, key = lambda item: (-item[1], item[0])))
-    
-    indexFile = ['"' + str(i) + '"' + " " + str(outDict[i]) + "\n" for i in outDict]
-    with open(target_root + "/index.txt", "w", encoding="utf8") as f:
-        f.writelines(indexFile)
-    print(outDict)
-    return outDict
+    return out
     pass
 
-# if __name__ == "__main__":
-    # Umkansanize("Tarahumara", "Umkansanian")
-    Umkansanize("test10", "test01010101010")
+if __name__ == '__main__':
+    print(jigsaw('tests/test02_in.png', 'tests/test02_exp.png', 4,
+                                    'tests/test02_enc.txt', 'output/test02222_out.txt'))
+
