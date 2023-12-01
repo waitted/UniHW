@@ -102,73 +102,104 @@ step     key      deciphering-buffer
 # %%
 import images
 def rotate(tile: list) -> list:
-    nrows = len(tile)
-    ncolumns = len(tile[0])
-    new_tile = []
-    for i in range(ncolumns):
-        row = []
-        for j in range(nrows):
-            row.append(tile[j][i])
-        new_tile.append(row[::-1])
+    # nrows = len(tile)
+    # ncolumns = len(tile[0])
+    # new_tile = []
+    # for i in range(ncolumns):
+    #     row = []
+    #     for j in range(nrows):
+    #         row.append(tile[j][i])
+    #     new_tile.append(row[::-1])
 
-    return new_tile
+    # return new_tile
+    return [list(row)[::-1] for row in zip(*tile)]
 
 def make_tile(img: list, i: int, j: int, size: int) -> list:
-    tile = []
-    for row in img[i*size:(i+1)*size]:
-        tile.append(row[j*size:(j+1)*size])
-        
-    return tile
+    # tile = []
+    # for row in img[i*size:(i+1)*size]:
+    #     tile.append(row[j*size:(j+1)*size])
+    
+    # return tile
+    return [row[j*size:(j+1)*size] for row in img[i*size:(i+1)*size]]
 
 def decryption(encrypted_file: str, encryption_key: str) -> str:
     with open(encrypted_file, "r", encoding = "utf8") as f:
         data = list(f.read())
     
     key_length = len(encryption_key)
-    decrypted = ""
+    # decrypted = ""
+    decrypted = []
     for i, val in enumerate(data):
         new_key = encryption_key[i % key_length]
         if new_key == "N":
-            decrypted += val
+            # decrypted += val
+            decrypted.append(val)
         elif new_key == "R":
-            decrypted += chr(ord(val)+1)
+            # decrypted += chr(ord(val)+1)
+            decrypted.append(chr(ord(val)+1))
         elif new_key == "L":
-            decrypted += chr(ord(val)-1)
+            # decrypted += chr(ord(val)-1)
+            decrypted.append(chr(ord(val)-1))
         else:
             try:
-                decrypted += data[i+1]
+                # decrypted += data[i+1]
+                decrypted.append(data[i+1])
                 data[i+1] = val
             except IndexError:
-                decrypted = val + decrypted[1::] + decrypted[0]
-    
-    return decrypted
+                # decrypted = val + decrypted[1:] + decrypted[0]
+                decrypted = [val] + decrypted[1:] + [decrypted[0]]
+
+    # return decrypted
+    return "".join(decrypted)
     
     
 def jigsaw(puzzle_image: str, plain_image: str, tile_size:int, encrypted_file: str, plain_file: str) -> list[str]:
-    rotations = {
-        0: "N",
-        1: "R",
-        2: "F",
-        3: "L"
-    }
+    # rotations = {
+    #     0: "N",
+    #     1: "R",
+    #     2: "F",
+    #     3: "L"
+    # }
+    # translation = str.maketrans("0123", "NRFL")
     img = images.load(puzzle_image)
     img_exp = images.load(plain_image)
     nrows = len(img)//tile_size
     ncolumns = len(img[0])//tile_size
     out = []
     for i in range(nrows):
-        encryption = ""
+        # encryption = ""
+        encryption = []
         for j in range(ncolumns):
-            count = 0
+            # count = 0
             tile = make_tile(img, i, j, tile_size)
             tile_exp = make_tile(img_exp, i, j, tile_size)
-            while tile != tile_exp:
+            # while tile != tile_exp:
+            #     tile = rotate(tile)
+            #     count += 1
+            # encryption += rotations[count]
+            if tile == tile_exp:
+                # encryption += "N"
+                encryption.append("N")
+            else:
                 tile = rotate(tile)
-                count += 1
-            encryption += rotations[count]
-        out.append(encryption)
+                if tile == tile_exp:
+                    # encryption += "R"
+                    encryption.append("R")
+                else:
+                    tile = rotate(tile)
+                    if tile == tile_exp:
+                        # encryption += "F"
+                        encryption.append("F")
+                    else:
+                        # encryption += "L"
+                        encryption.append("L")
+            # encryption += str(count)
+        # encryption = encryption.translate(translation)
+        # out.append(encryption)
+        out.append("".join(encryption))
     
-    encryption_key = "".join("".join(element) for element in out)
+    # encryption_key = "".join("".join(element) for element in out)
+    encryption_key = "".join(out)
     decrypted = decryption(encrypted_file, encryption_key)
     
     with open(plain_file, "w", encoding = "utf8") as f:
@@ -178,6 +209,6 @@ def jigsaw(puzzle_image: str, plain_image: str, tile_size:int, encrypted_file: s
     pass
 
 if __name__ == '__main__':
-    print(jigsaw('tests/test02_in.png', 'tests/test02_exp.png', 4,
-                                    'tests/test02_enc.txt', 'output/test02222_out.txt'))
+    print(jigsaw('tests/test03_in.png', 'tests/test03_exp.png', 44,
+                                    'tests/test03_enc.txt', 'output/test02222_out.txt'))
 
