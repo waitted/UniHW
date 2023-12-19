@@ -1,214 +1,123 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-'''It is a quiet December evening, and while it's pouring rain outside
-you get a call from your friend Bart, who is not very computer
-savvy. After calming him down, he tells you that he went to his PC to
-look for the perfect gift, surfing on exotic and alternative
-e-commerce sites, doing searches on disparate sites using an automatic
-translator. He tells you he ended up on a site with the .atp domain,
-thinking it had something to do with tennis, his great passion. After
-following a couple of products on the strange site, he noticed that
-his browser was responding more slowly and the mouse pointer was
-starting to flicker. After a few seconds, a warning message appeared
-informing him that he had been infected with the latest generation of
-ransomware, which targets sensitive files. Panicked, he remembered
-your venture with the Tarahumara sheet music and called you to help
-him recover his files. The next day, you go to Bart's house and
-analyze the situation: as you thought, the ransomware is the infamous
-Burl1(ONE), which encrypts PC files by storing the encryption key
-inside images with the .png extension, turning them into intricate
-puzzles. Because Bart stores his images on an on cloud service, you
-manage to retrieve the original images so you can reconstruct the
-ransomware's encryption key and decrypt all his precious files. Will
-you be able to find all the keys and recover all the files?
-Bart is counting on you!
-
-The Burl1 ransomware stores the encryption key by dividing images with
-the .png extension into square tiles and performing or not performing
-rotations of the individual tiles of 90, 180 or 270°, that is,
-performing one, two or three rotations to the right. The key will
-respectively have an 'R' (right) an 'F' (flip) or an 'L' (left),
-depending on the rotation made. The absence of rotation reports the
-character 'N'.
-
-For each image, it is necessary to reconstruct the encryption key in
-the form of a list of strings: each string corresponds to the sequence
-of rotations of each tile in a row. So a 100x60 image in which the
-tiles are size 20 will hide an encryption key of 15 characters,
-organized into three strings of five characters each. In fact, there
-will be 5 tiles per row (100//20 = 5) and 3 rows (60//20 = 3). To find
-out the rotations performed you have to use the image you retrieved
-from the cloud to compare with the encrypted image.
-
-You need to write the function
-jigsaw(puzzle_image:str, plain_image:str, tile_size:int, encrypted_file:str, plain_file:str) -> list[str]
-that takes as input:
- - the name of the file containing the image with the rotated tiles,
- - the name of the file containing the image with the unrotated tiles,
- - an integer indicating the size of the side of the square tiles, 
- - the name of a text file to be decrypted with the encryption key, and
- - the name in which to save the decrypted file.
-
-The function must reconstruct and return the encryption key hidden in
-the image in puzzle_image and use it to decrypt the encrypted file,
-saving the plaintext in a file called plain_file. The key is the
-sequence of rotations to be made to reconstruct the initial image and
-decrypt the input file.
-
-For example, comparing the image in test01_in.png with test01_exp.png
-and considering the 20-pixel square tiles, it can be determined that
-the rotations applied were
-  - 'LFR' for the tiles in the first row,
-  - 'NFF' for the tiles in the second row, and
-  - 'FNR' for the tiles in the third row.
-So the key to be returned will be: ['LFR', 'NFF', 'FNR'].
-
-Decryption of the file is achieved by implementing a transformation
-depending on the character of the key in position i, modulo the length of the
-key.  For example, if the key is ['LFR', 'NFF', 'FNR'], the key is 9
-long, and we need to decrypt the character at position 14 of the input
-file, we need to consider the character at position 14%9 = 5 of the
-key, i.e., 'F'.
-The transformations for decryption are as follows:
-
-  - R = text[i] replaced by the character with following ord
-  - L = text[i] replaced by the character with previous ord
-  - N = remains unchanged
-  - F = swap text[i] with text[i+1]. If i+1 does not exist, we consider
-        the character text[0].
-
-For example, if the key is LFR and the ecrypted text is BNVDCAP, the
-plaintext will be AVOCADO since the decryption will be the following:
-
-step     key      deciphering-buffer
-1        LFR      BNVDCAP -> ANVDCAP
-         ^        ^
-2        LFR      ANVDCAP -> AVNDCAP
-          ^        ^
-3        LFR      AVNDCAP -> AVODCAP
-           ^        ^
-4        LFR      AVODCAP -> AVOCCAP
-         ^           ^
-5        LFR      AVOCCAP -> AVOCACP
-          ^           ^
-6        LFR      AVOCACP -> AVOCADP
-           ^           ^
-7        LFR      AVOCADP -> AVOCADO
-         ^              ^
-
 '''
+Your dear friend Pico de Paperis sent you a very strange message scribbled on a postcard.
+You haven't seen him in a long time and you've always had fun writing to each other in code.
+To decode his message, go and look for a rather particular book in your library,
+the Archimedes Pythagorean cipher. The cipher to be applied is the famous "Pharaoh's Cipher".
+The decipherment with the Pharaoh's method is based on rules for substituting sequences of symbols in the text.
+The reason why it is called "Pharaoh's cipher" is that in ancient Egyptian sequences made up of multiple hieroglyphs
+could be written in any order, so any anagram of the sequences was valid.
+To make things stranger, Pico de Paperis decided to use a cipher that is not exactly the one of Pharaoh,
+but a variant of it. Instead of using anagrams he uses "quasi-anagrams", that is, anagrams that in the original text
+have one more spurious character than the searched sequence.
+The cipher contains pairs of sequences that indicate how to transform the text.
+For example, the pair 'shampoo' -> 'soap' corresponds to searching for a point in the message where the sequence
+'shampoo' appears (or an anagram of it) but with an extra character (e.g. 'pmQohaso')
+and replace it with the sequence 'soap'.
+Decoding the message can lead to more possible final messages, because there can be more sequences in the text
+that can be transformed at any time and the order of transformations influences subsequent transformations.
+At some point it will happen that none of the "quasi-anagrams" of a cipher sequence is present anywhere
+in the sequence of symbols, and therefore it is no longer possible to make transformations.
+We call these sequences final sequences.
+Of all the possible final sequences, the one we are interested are all the shortest.
 
-# %%
-import images
-def rotate(tile: list) -> list:
-    # nrows = len(tile)
-    # ncolumns = len(tile[0])
-    # new_tile = []
-    # for i in range(ncolumns):
-    #     row = []
-    #     for j in range(nrows):
-    #         row.append(tile[j][i])
-    #     new_tile.append(row[::-1])
+To decode the Pico de Paperis message you must implement the function
+pharaohs_revenge(encrypted_text : str, pharaohs_cypher : dict[str,str]) -> set[str]:
+which receives as arguments:
+- the text that Pico de Paperis sent you, as a string of symbols (characters)
+- the cipher to be applied, a dictionary whose keys are the sequences to search for a quasi-anagram in the text
+    and as the associated value the string to replace the quasi-anagram found with.
+The function must return the set of the shortest texts obtainable by repeatedly applying
+the transformations until it is no longer possible to apply any of them.
 
-    # return new_tile
-    return [list(row)[::-1] for row in zip(*tile)]
+Example:
+encrypted_text  = 'astronaut-flying-cyrcus'
+pharaohs_cypher = {'tuar': 'me', 'cniy': 'op', 'sorta': 'tur', 'fult': 'at', 'rycg': 'nc'}
 
-def make_tile(img: list, i: int, j: int, size: int) -> list:
-    # tile = []
-    # for row in img[i*size:(i+1)*size]:
-    #     tile.append(row[j*size:(j+1)*size])
-    
-    # return tile
-    return [row[j*size:(j+1)*size] for row in img[i*size:(i+1)*size]]
+Result: {'tmeopcus', 'metopcus', 'ameopcus', 'atmepcus'}
+Notice, and all the transformations applied are those contained in the example.txt file
+(in alphabetical order and without repetitions)
 
-def decryption(encrypted_file: str, encryption_key: str) -> str:
-    with open(encrypted_file, "r", encoding = "utf8") as f:
-        data = list(f.read())
-    
-    key_length = len(encryption_key)
-    # decrypted = ""
-    decrypted = []
-    for i, val in enumerate(data):
-        new_key = encryption_key[i % key_length]
-        if new_key == "N":
-            # decrypted += val
-            decrypted.append(val)
-        elif new_key == "R":
-            # decrypted += chr(ord(val)+1)
-            decrypted.append(chr(ord(val)+1))
-        elif new_key == "L":
-            # decrypted += chr(ord(val)-1)
-            decrypted.append(chr(ord(val)-1))
-        else:
-            try:
-                # decrypted += data[i+1]
-                decrypted.append(data[i+1])
-                data[i+1] = val
-            except IndexError:
-                # decrypted = val + decrypted[1:] + decrypted[0]
-                decrypted = [val] + decrypted[1:] + [decrypted[0]]
+NOTE: At least one of the functions or methods you implement must be recursive
+NOTE: the recursive function/method must be defined at the outermost level
+      otherwise you will fail the recursion test.
+'''
+def quasi_anagram(text, word):
+    if len(text) - 1 != len(word):
+        return False
+    dict1 = {}
+    dict2 = {}
+    for i, val in enumerate(word):
+        try:
+            dict1[val] += 1
+        except:
+            dict1[val] = 1
+    for i, val in enumerate(text):
+        try:
+            dict2[val] += 1
+            # dict1[word[i]] += 1
+        except:
+            dict2[val] = 1
+            # dict1[word[i]] = 1
+    if len(set(dict2.items())-set(dict1.items())) == 1:
+        return True
+    return False
 
-    # return decrypted
-    return "".join(decrypted)
-    
-    
-def jigsaw(puzzle_image: str, plain_image: str, tile_size:int, encrypted_file: str, plain_file: str) -> list[str]:
-    # rotations = {
-    #     0: "N",
-    #     1: "R",
-    #     2: "F",
-    #     3: "L"
-    # }
-    # translation = str.maketrans("0123", "NRFL")
-    img = images.load(puzzle_image)
-    img_exp = images.load(plain_image)
-    nrows = len(img)//tile_size
-    ncolumns = len(img[0])//tile_size
-    out = []
-    for i in range(nrows):
-        # encryption = ""
-        encryption = []
-        for j in range(ncolumns):
-            # count = 0
-            tile = make_tile(img, i, j, tile_size)
-            tile_exp = make_tile(img_exp, i, j, tile_size)
-            # while tile != tile_exp:
-            #     tile = rotate(tile)
-            #     count += 1
-            # encryption += rotations[count]
-            if tile == tile_exp:
-                # encryption += "N"
-                encryption.append("N")
-            else:
-                tile = rotate(tile)
-                if tile == tile_exp:
-                    # encryption += "R"
-                    encryption.append("R")
-                else:
-                    tile = rotate(tile)
-                    if tile == tile_exp:
-                        # encryption += "F"
-                        encryption.append("F")
-                    else:
-                        # encryption += "L"
-                        encryption.append("L")
-            # encryption += str(count)
-        # encryption = encryption.translate(translation)
-        # out.append(encryption)
-        out.append("".join(encryption))
-    
-    # encryption_key = "".join("".join(element) for element in out)
-    encryption_key = "".join(out)
-    decrypted = decryption(encrypted_file, encryption_key)
-    
-    with open(plain_file, "w", encoding = "utf8") as f:
-        f.write(decrypted)
-        
-    return out
+
+def pharaohs(text, cypher, minLen, maxLen, out):
+    length = len(text)
+    for i, val in enumerate(text):
+        startIndex = i
+        j = minLen 
+        while j <= length:
+            searchFor = text[i:j+1]
+            # print("search for: "+searchFor)
+            for word in cypher.keys():
+                # print(text)
+                # print(text[:i]+"|"+cypher[word]+"|"+text[j:])
+                if quasi_anagram(searchFor, word):
+                    newtext = text[:i]+cypher[word]+text[j+1:]
+                    out.add(newtext)
+                    # print("i, val:" + str(i) + val)
+                    pharaohs(newtext, cypher, minLen, maxLen, out)
+            out.add(text)
+            j += 1
+                
     pass
 
-if __name__ == '__main__':
-    print(jigsaw('tests/test03_in.png', 'tests/test03_exp.png', 44,
-                                    'tests/test03_enc.txt', 'output/test02222_out.txt'))
+def pharaohs_revenge(encrypted_text : str, pharaohs_cypher : dict[str,str]) -> set[str]:
+    # minLen = len(min(dict, key = len(dict.get)))
+    # maxLen = len(max(dict, key = len(dict.get)))
+    minLen = len(min(pharaohs_cypher, key = lambda x: len(x)))
+    maxLen = len(max(pharaohs_cypher, key = lambda x: len(x)))
+    length = len(encrypted_text)
+    out = set()
+    pharaohs(encrypted_text, pharaohs_cypher, minLen, maxLen, out)
+    shortestLength = length
+    currLength = 0
+    finalOut = set()
+    for i in out:
+        currLength = len(i)
+        if currLength < shortestLength:
+            shortestLength = currLength
+            finalOut.clear()
+            finalOut.add(i)
+        if currLength == shortestLength:
+            finalOut.add(i)
+    # finalOut = set()
+    # finalOut = {i for i in out if len(i) == shortestLength}
+    return finalOut
+    pass
+    # add here your code
 
+
+
+if __name__ == '__main__':
+    encrypted_text  = 'astronaut-flying-cyrcus'
+    pharaohs_cypher = {'tuar': 'me', 'cniy': 'op', 'sorta': 'tur', 'fult': 'at', 'rycg': 'nc'}
+    print(pharaohs_revenge(encrypted_text, pharaohs_cypher))
+    # print(quasi_anagram("ut-fl", "fult"))
+
+    pass
+    # place here your own tests
